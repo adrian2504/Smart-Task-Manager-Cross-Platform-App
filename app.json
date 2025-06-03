@@ -23,13 +23,11 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+     "web": {
+      "favicon": "./assets/favicon.png"  // ← keep anything router-agnostic
     },
     "plugins": [
-      "expo-router"
+      
     ],
     "experiments": {
       "typedRoutes": true

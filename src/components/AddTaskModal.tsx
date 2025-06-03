@@ -1,64 +1,113 @@
+// src/components/AddTaskModal.tsx
+
 import React, { useState } from 'react';
-import { Modal, View, TextInput, Pressable, Text } from 'react-native';
-import GlassContainer from './GlassContainer';
-import { v4 as uuid } from 'uuid';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import {
+  Modal,
+  View,
+  TextInput,
+  Pressable,
+  Text,
+  StyleSheet,
+  Platform,
+} from 'react-native';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onAdd: (title: string, due?: Date) => void;
+  onAdd: (title: string) => void;
 }
 
 export default function AddTaskModal({ visible, onClose, onAdd }: Props) {
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState<Date | undefined>();
 
   const submit = () => {
     if (!title.trim()) return;
-    onAdd(title.trim(), date);
+    onAdd(title.trim());
     setTitle('');
-    setDate(undefined);
     onClose();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 items-center justify-center bg-black/20 px-4">
-        <GlassContainer style="w-full max-w-md">
-          <Text className="text-lg font-bold mb-2 text-center">Add New Task</Text>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Add New Task</Text>
           <TextInput
-            autoFocus
+            style={styles.input}
             placeholder="Task title"
             value={title}
             onChangeText={setTitle}
-            className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 mb-2 text-gray-800 dark:text-gray-100"
+            autoFocus
           />
-
-          {date && <Text className="text-center mb-2">Due: {date.toLocaleString()}</Text>}
-          <Pressable onPress={() => setDate(new Date())} className="mb-2">
-            <Text className="text-blue-500 text-center">{date ? 'Change date' : 'Add due date'}</Text>
-          </Pressable>
-
-          {date && (
-            <DateTimePicker
-              value={date}
-              mode="datetime"
-              onChange={(e, selected) => setDate(selected || date)}
-              style={{ width: '100%' }}
-            />
-          )}
-
-          <View className="flex-row justify-end mt-4">
-            <Pressable onPress={onClose} className="mr-3">
-              <Text className="text-gray-500">Cancel</Text>
+          <View style={styles.buttonRow}>
+            <Pressable onPress={onClose} style={styles.cancelButton}>
+              <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
-            <Pressable onPress={submit}>
-              <Text className="text-blue-600 font-medium">Add</Text>
+            <Pressable onPress={submit} style={styles.addConfirmButton}>
+              <Text style={styles.addConfirmText}>Add</Text>
             </Pressable>
           </View>
-        </GlassContainer>
+        </View>
       </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: '#00000088',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#bbb',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === 'web' ? 8 : 6,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  cancelButton: {
+    marginRight: 20,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  addConfirmButton: {},
+  addConfirmText: {
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+});
