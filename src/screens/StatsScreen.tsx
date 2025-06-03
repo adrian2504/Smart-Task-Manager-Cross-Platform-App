@@ -1,9 +1,10 @@
-// src/screens/StatsScreen.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { VictoryPie } from 'victory-native';
+import { Platform } from 'react-native';
 import { palette } from '../theme/colors';
-import useTasks from '../hooks/useTasks';
+import { useTasks } from '../hooks/TasksContext';
+
+const { VictoryPie } = Platform.OS === 'web'  ? require('victory')  : require('victory-native');  
 
 export default function StatsScreen() {
   const { tasks } = useTasks();
@@ -23,7 +24,7 @@ export default function StatsScreen() {
       <VictoryPie
         data={[
           { x: 'Done', y: doneCount },
-          { x: 'Pending', y: pendingCount },
+          { x: 'Pending', y: pendingCount }
         ]}
         innerRadius={60}
         width={280}
@@ -37,21 +38,7 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.white,
-    padding: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.white,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: palette.gray[500],
-  },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.white, padding: 16 },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.white },
+  emptyText: { fontSize: 16, color: palette.gray[500] }
 });

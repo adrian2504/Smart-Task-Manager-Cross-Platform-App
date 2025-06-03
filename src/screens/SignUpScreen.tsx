@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { palette } from '../theme/colors';
+import { useUser } from '../hooks/UserContext';
 
 export default function SignUpScreen({
   navigation,
@@ -11,6 +13,13 @@ export default function SignUpScreen({
   const [user, setUser] = useState('');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
+  const { setUserName } = useUser();
+
+  const onSignUp = () => {
+    // In a real app, validate and create account here…
+    setUserName(user.trim());
+    navigation.replace('Main');
+  };
 
   return (
     <View style={styles.container}>
@@ -40,13 +49,12 @@ export default function SignUpScreen({
         value={pass}
         onChangeText={setPass}
       />
-      <Pressable style={styles.button} onPress={() => navigation.replace('Main')}>
+      <Pressable style={styles.button} onPress={onSignUp}>
         <Text style={styles.buttonText}>Sign up</Text>
       </Pressable>
       <Pressable style={{ marginTop: 20 }} onPress={() => navigation.goBack()}>
         <Text>
-          Already have an account?{' '}
-          <Text style={{ color: palette.blue[600] }}>Sign in</Text>
+          Already have an account? <Text style={{ color: palette.blue[600] }}>Sign in</Text>
         </Text>
       </Pressable>
     </View>
@@ -54,22 +62,9 @@ export default function SignUpScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: palette.white,
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    alignSelf: 'center',
-    marginTop: 30,
-  },
-  h1: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginVertical: 24,
-  },
+  container: { flex: 1, padding: 24, backgroundColor: palette.white },
+  image: { width: '100%', height: 200, alignSelf: 'center', marginTop: 30 },
+  h1: { fontSize: 28, fontWeight: '700', marginVertical: 24 },
   input: {
     backgroundColor: palette.blue[100],
     borderRadius: 8,
@@ -84,9 +79,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  buttonText: {
-    color: palette.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  buttonText: { color: palette.white, fontSize: 16, fontWeight: '600' },
 });

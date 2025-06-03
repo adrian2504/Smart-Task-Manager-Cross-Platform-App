@@ -1,103 +1,112 @@
-// src/screens/DashboardScreen.tsx
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+
 import { palette } from '../theme/colors';
 import GlassContainer from '../components/GlassContainer';
+import { useTasks } from '../hooks/TasksContext';
+import TaskCard from '../components/TaskCard';
+import { useUser } from '../hooks/UserContext';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
+  const { tasks, dispatch } = useTasks();
+  const { userName } = useUser();
+
+  /* ===== Helper: tasks due in the future ===== */
+  const today = new Date().setHours(0, 0, 0, 0);
+  const upcoming = tasks
+    .filter((t) => t.due && new Date(t.due).getTime() > today)
+    .sort((a, b) => +new Date(a.due!) - +new Date(b.due!))     // soonest first
+    .slice(0, 10);                                              // cap to 10 cards
+
+  const pending = tasks.filter((t) => !t.done).length;
+  const progress = tasks.length
+    ? Math.round((tasks.filter((t) => t.done).length / tasks.length) * 100)
+    : 0;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header Box */}
+      {/* ===== Header ===== */}
       <View style={styles.headerBox}>
-        <Text style={styles.greeting}>Good morning John</Text>
-        <Text style={styles.sub}>4 Tasks remaining</Text>
+        <Text style={styles.greeting}>
+         Good morning {userName ? userName : ''}
+       </Text>
+        <Text style={styles.sub}>{pending} Tasks remaining</Text>
         <Pressable style={styles.bellIcon}>
           <Feather name="bell" size={20} color={palette.white} />
         </Pressable>
       </View>
 
-      {/* Calendar Picker (just header) */}
-      <Calendar
-        theme={{
-          selectedDayBackgroundColor: palette.blue[500],
-          todayTextColor: palette.blue[600],
-          arrowColor: palette.blue[600],
-        }}
-        style={{
-          marginHorizontal: 16,
-          borderRadius: 12,
-          backgroundColor: palette.white,
-          elevation: 2,
-        }}
-        firstDay={1}
-      />
 
-      {/* Today Task Summary Widget */}
+      {/* ===== Today summary widget ===== */}
       <GlassContainer style={styles.widget}>
         <Text style={styles.widgetTitle}>Today Task Summary</Text>
-        <Text style={styles.widgetSub}>Progress 85%</Text>
+        <Text style={styles.widgetSub}>Progress {progress}%</Text>
+
         <Pressable
           style={styles.widgetFab}
-          onPress={() => navigation.navigate('AddTask' as never)} // cast for TS
+          onPress={() => navigation.navigate('AddTask' as never)}
         >
           <Feather name="plus" size={20} color={palette.white} />
         </Pressable>
       </GlassContainer>
 
-      {/* Upcoming Task Horizontal Scroll */}
-      <Text style={styles.sectionTitle}>UpComing Task</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 16 }}>
-        {[1, 2, 3].map((id) => (
-          <GlassContainer key={id} style={styles.cardSmall}>
-            <Text style={styles.cardSmallTitle}>Task {id}</Text>
-            <Text style={styles.cardSmallSub}>Details of task {id}</Text>
-          </GlassContainer>
-        ))}
-      </ScrollView>
+      {/* ===== Upcoming tasks horizontal scroll ===== */}
+      <Text style={styles.sectionTitle}>Upcoming Task</Text>
+      {upcoming.length === 0 ? (
+        <Text style={{ marginLeft: 16, color: palette.gray[500] }}>
+          No upcoming tasks
+        </Text>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ paddingLeft: 16 }}
+        >
+          {upcoming.map((task) => (
+            <GlassContainer key={task.id} style={styles.cardSmall}>
+              <Text style={styles.cardSmallTitle}>{task.title}</Text>
+              <Text style={styles.cardSmallSub}>
+                {new Date(task.due!).toDateString()}
+              </Text>
+            </GlassContainer>
+          ))}
+        </ScrollView>
+      )}
 
-      {/* My Task List with Filter Chips */}
+      {/* ===== My Task List (live, toggleable) ===== */}
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>My Task List</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ paddingLeft: 16, marginBottom: 12 }}
-      >
-        {['All', 'Pending', 'In Progress', 'Done'].map((label, idx) => (
-          <Pressable
-            key={idx}
-            style={[styles.chip, idx === 0 && styles.chipActive]}
-          >
-            <Text style={{ color: idx === 0 ? palette.white : palette.gray[500] }}>{label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
 
-      {/* Dummy Task Rows */}
-      {[1, 2, 3].map((id) => (
-        <View key={id} style={styles.taskRow}>
-          <View>
-            <Text style={styles.taskTitle}>Task {id}</Text>
-            <Text style={styles.taskDetail}>Details of task {id}</Text>
-          </View>
-          <View style={styles.statusDot} />
-        </View>
+      {tasks.map((task) => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          onToggle={() => dispatch({ type: 'TOGGLE', id: task.id })}
+          onDelete={() => dispatch({ type: 'DELETE', id: task.id })}
+        />
       ))}
+
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: palette.white,
-  },
+  container: { flex: 1, backgroundColor: palette.white },
+
+  /* header */
   headerBox: {
     backgroundColor: palette.blue[500],
     paddingTop: 50,
@@ -106,32 +115,14 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  greeting: {
-    color: palette.white,
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  sub: {
-    color: palette.white,
-    fontSize: 14,
-  },
-  bellIcon: {
-    position: 'absolute',
-    right: 16,
-    top: 52,
-  },
-  widget: {
-    margin: 16,
-    position: 'relative',
-  },
-  widgetTitle: {
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  widgetSub: {
-    color: palette.gray[500],
-  },
+  greeting: { color: palette.white, fontSize: 22, fontWeight: '700' },
+  sub: { color: palette.white, fontSize: 14, marginTop: 2 },
+  bellIcon: { position: 'absolute', right: 16, top: 52 },
+
+  /* widget */
+  widget: { margin: 16, position: 'relative' },
+  widgetTitle: { fontWeight: '600', marginBottom: 4 },
+  widgetSub: { color: palette.gray[500] },
   widgetFab: {
     position: 'absolute',
     right: 12,
@@ -143,6 +134,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  /* section titles + cards */
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -151,57 +144,9 @@ const styles = StyleSheet.create({
   },
   cardSmall: {
     width: width * 0.45,
-    backgroundColor: palette.white,
     borderRadius: 12,
     marginRight: 12,
-    elevation: 2,
-    shadowColor: palette.gray[500],
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
   },
-  cardSmallTitle: {
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  cardSmallSub: {
-    color: palette.gray[500],
-    fontSize: 12,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: palette.blue[500],
-    marginRight: 8,
-  },
-  chipActive: {
-    backgroundColor: palette.blue[500],
-    borderColor: palette.blue[500],
-  },
-  taskRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: palette.white,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 12,
-    elevation: 1,
-  },
-  taskTitle: {
-    fontWeight: '600',
-  },
-  taskDetail: {
-    fontSize: 12,
-    color: palette.gray[500],
-  },
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#ef4444',
-  },
+  cardSmallTitle: { fontWeight: '600', marginBottom: 4 },
+  cardSmallSub: { color: palette.gray[500], fontSize: 12 },
 });

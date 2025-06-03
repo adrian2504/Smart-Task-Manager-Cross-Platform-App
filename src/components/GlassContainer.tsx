@@ -3,11 +3,7 @@ import { ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
-interface Props {
-  children: React.ReactNode;
-  style?: ViewStyle | ViewStyle[];
-}
-
+interface Props { children: React.ReactNode; style?: ViewStyle | ViewStyle[]; }
 export default function GlassContainer({ children, style }: Props) {
   return (
     <BlurView intensity={50} tint="light" style={[{ borderRadius: 20, overflow: 'hidden' }, style]}>

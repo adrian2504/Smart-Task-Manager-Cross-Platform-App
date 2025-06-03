@@ -4,5 +4,6 @@ export interface Task {
   notes?: string;
   due?: string; // ISO date
   done: boolean;
+  category?: string; 
   notificationId?: string;
 }

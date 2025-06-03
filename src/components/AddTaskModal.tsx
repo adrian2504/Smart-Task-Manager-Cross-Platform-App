@@ -1,25 +1,11 @@
-// src/components/AddTaskModal.tsx
-
 import React, { useState } from 'react';
-import {
-  Modal,
-  View,
-  TextInput,
-  Pressable,
-  Text,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { Modal, View, TextInput, Pressable, Text, StyleSheet, Platform } from 'react-native';
+import { palette } from '../theme/colors';
 
-interface Props {
-  visible: boolean;
-  onClose: () => void;
-  onAdd: (title: string) => void;
-}
+interface Props { visible: boolean; onClose: () => void; onAdd: (title: string) => void; }
 
 export default function AddTaskModal({ visible, onClose, onAdd }: Props) {
   const [title, setTitle] = useState('');
-
   const submit = () => {
     if (!title.trim()) return;
     onAdd(title.trim());
@@ -67,7 +53,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: palette.white,
     borderRadius: 12,
     width: '100%',
     maxWidth: 400,
@@ -78,12 +64,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
+  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
   input: {
     borderWidth: 1,
     borderColor: '#bbb',
@@ -93,21 +74,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 16,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  cancelButton: {
-    marginRight: 20,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#555',
-  },
+  buttonRow: { flexDirection: 'row', justifyContent: 'flex-end' },
+  cancelButton: { marginRight: 20 },
+  cancelText: { fontSize: 16, color: '#555' },
   addConfirmButton: {},
-  addConfirmText: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
+  addConfirmText: { fontSize: 16, color: palette.blue[500], fontWeight: '500' }
 });

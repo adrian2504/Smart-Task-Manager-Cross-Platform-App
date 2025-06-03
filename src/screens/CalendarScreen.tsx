@@ -1,60 +1,104 @@
 // src/screens/CalendarScreen.tsx
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Agenda } from 'react-native-calendars';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+} from 'react-native';
+import { Calendar, DateObjectType } from 'react-native-calendars';
+
 import { palette } from '../theme/colors';
-import useTasks from '../hooks/useTasks';
+import { useTasks } from '../hooks/TasksContext';
 import TaskCard from '../components/TaskCard';
 
 export default function CalendarScreen() {
   const { tasks, dispatch } = useTasks();
 
-  // Build items for Agenda
-  const items: Record<string, any[]> = {};
+  // 1) Track selected date (YYYY-MM-DD). Default: today.
+  const todayKey = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey);
+
+  // 2) Build “markedDates”: every date with ≥1 task gets a dot
+  const markedDates: Record<string, any> = {};
   tasks.forEach((task) => {
     if (!task.due) return;
-    const dateKey = task.due.split('T')[0]; // "YYYY-MM-DD"
-    if (!items[dateKey]) items[dateKey] = [];
-    items[dateKey].push({ ...task, name: task.title });
+    const key = task.due.split('T')[0];
+    markedDates[key] = { marked: true, dotColor: palette.blue[500] };
   });
+  // Highlight the selected date as well
+  markedDates[selectedDate] = {
+    ...(markedDates[selectedDate] || { marked: false }),
+    selected: true,
+    selectedColor: palette.blue[500],
+  };
 
-  const noItems = Object.keys(items).length === 0;
+  // 3) Filter tasks for the selected date
+  const tasksForDay = tasks.filter((task) => {
+    return task.due?.split('T')[0] === selectedDate;
+  });
 
   return (
     <View style={styles.container}>
-      {noItems ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No due-dated tasks yet.</Text>
-        </View>
-      ) : (
-        <Agenda
-          items={items}
-          selected={new Date().toISOString().split('T')[0]}
-          renderItem={(task: any) => (
-            <TaskCard
-              task={task}
-              onToggle={() => dispatch({ type: 'TOGGLE', id: task.id })}
-              onDelete={() => dispatch({ type: 'DELETE', id: task.id })}
-            />
-          )}
-          renderEmptyDate={() => (
-            <View style={styles.emptyDate}>
-              <Text style={styles.emptyDateText}>No tasks</Text>
-            </View>
-          )}
-          theme={{
-            selectedDayBackgroundColor: palette.blue[500],
-            todayTextColor: palette.blue[600],
-          }}
-          style={{}}
-        />
-      )}
+      {/* ===== Calendar header ===== */}
+      <Calendar
+        onDayPress={(day: DateObjectType) => {
+          setSelectedDate(day.dateString);
+        }}
+        markedDates={markedDates}
+        theme={{
+          selectedDayBackgroundColor: palette.blue[500],
+          todayTextColor: palette.blue[600],
+          arrowColor: palette.blue[600],
+          dotColor: palette.blue[500],
+        }}
+        firstDay={1}
+        style={styles.calendar}
+      />
+
+      {/* ===== Task list for that day ===== */}
+      <View style={styles.listContainer}>
+        {tasksForDay.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No tasks for {selectedDate}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={tasksForDay}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TaskCard
+                task={item}
+                onToggle={() => dispatch({ type: 'TOGGLE', id: item.id })}
+                onDelete={() => dispatch({ type: 'DELETE', id: item.id })}
+              />
+            )}
+            contentContainerStyle={{ paddingBottom: 32 }}
+          />
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: palette.white },
+
+  calendar: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    elevation: 2,
+    backgroundColor: palette.white,
+  },
+
+  listContainer: {
+    flex: 1,
+    marginTop: 12,
+    paddingHorizontal: 16,
+  },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
@@ -62,17 +106,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: palette.gray[500],
-  },
-  emptyDate: {
-    backgroundColor: '#f0f0f0',
-    padding: 12,
-    marginVertical: 4,
-    marginHorizontal: 16,
-    borderRadius: 8,
-  },
-  emptyDateText: {
-    textAlign: 'center',
     color: palette.gray[500],
   },
 });
