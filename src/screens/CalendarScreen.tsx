@@ -1,15 +1,15 @@
 // src/screens/CalendarScreen.tsx
-
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Agenda } from 'react-native-calendars';
+import { palette } from '../theme/colors';
 import useTasks from '../hooks/useTasks';
 import TaskCard from '../components/TaskCard';
 
 export default function CalendarScreen() {
   const { tasks, dispatch } = useTasks();
 
-  // Build the items map for Agenda: only include tasks that have a valid due date
+  // Build items for Agenda
   const items: Record<string, any[]> = {};
   tasks.forEach((task) => {
     if (!task.due) return;
@@ -18,16 +18,13 @@ export default function CalendarScreen() {
     items[dateKey].push({ ...task, name: task.title });
   });
 
-  // If there are no items at all, show a placeholder message
   const noItems = Object.keys(items).length === 0;
 
   return (
     <View style={styles.container}>
       {noItems ? (
-        <View style={styles.emptyMessageContainer}>
-          <Text style={styles.emptyMessageText}>
-            No due‐dated tasks yet.
-          </Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No due-dated tasks yet.</Text>
         </View>
       ) : (
         <Agenda
@@ -40,12 +37,16 @@ export default function CalendarScreen() {
               onDelete={() => dispatch({ type: 'DELETE', id: task.id })}
             />
           )}
-          // optional: show placeholder for empty dates in agenda
           renderEmptyDate={() => (
-            <View style={styles.emptyDateContainer}>
+            <View style={styles.emptyDate}>
               <Text style={styles.emptyDateText}>No tasks</Text>
             </View>
           )}
+          theme={{
+            selectedDayBackgroundColor: palette.blue[500],
+            todayTextColor: palette.blue[600],
+          }}
+          style={{}}
         />
       )}
     </View>
@@ -53,17 +54,17 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#e8f5ff' },
-  emptyMessageContainer: {
+  container: { flex: 1, backgroundColor: palette.white },
+  emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyMessageText: {
+  emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: palette.gray[500],
   },
-  emptyDateContainer: {
+  emptyDate: {
     backgroundColor: '#f0f0f0',
     padding: 12,
     marginVertical: 4,
@@ -72,6 +73,6 @@ const styles = StyleSheet.create({
   },
   emptyDateText: {
     textAlign: 'center',
-    color: '#999',
+    color: palette.gray[500],
   },
 });

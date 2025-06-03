@@ -1,14 +1,35 @@
+// src/screens/AboutScreen.tsx
 import React from 'react';
-import { View, Text, Linking, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { palette } from '../theme/colors';
 
 export default function AboutScreen() {
   return (
-    <View className="flex-1 items-center justify-center p-6 bg-glass-light dark:bg-glass-dark">
-      <Text className="text-xl font-bold mb-2">Glass Task Manager</Text>
-      <Text className="text-center mb-4">A demo cross‑platform task manager built with Expo SDK 53.</Text>
-      <Pressable onPress={() => Linking.openURL('https://github.com/your-handle/glass-task-manager')}>
-        <Text className="text-blue-500">Source code on GitHub</Text>
-      </Pressable>
+    <View style={styles.container}>
+      <Text style={styles.title}>About Glass-Blue Task Manager</Text>
+      <Text style={styles.body}>
+        This is a demo app showcasing a sleek glass-morphism UI in React Native
+        (Expo SDK 53). Build, customize, and extend as you wish!
+      </Text>
     </View>
   );
-}   
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: palette.white,
+    padding: 24,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  body: {
+    fontSize: 16,
+    color: palette.gray[500],
+    lineHeight: 22,
+  },
+});
