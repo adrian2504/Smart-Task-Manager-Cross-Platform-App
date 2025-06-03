@@ -22,9 +22,9 @@ export default function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login"      component={LoginScreen} />
-      <Stack.Screen name="SignUp"     component={SignUpScreen} />
       <Stack.Screen name="AddTask"    component={AddTaskScreen} />
       <Stack.Screen name="Main"       component={TabsNavigator} />
+      <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
     </Stack.Navigator>
   );
 }

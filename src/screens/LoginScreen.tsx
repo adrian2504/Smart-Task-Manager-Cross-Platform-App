@@ -1,83 +1,111 @@
-// src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Image } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-import { RootStackParamList } from '../navigation/RootNavigator';
+import { useAuth } from '../hooks/useAuth';
 import { palette } from '../theme/colors';
-import { useUser } from '../hooks/UserContext';
 
-export default function LoginScreen({
-  navigation,
-}: NativeStackScreenProps<RootStackParamList, 'Login'>) {
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const { setUserName } = useUser(); // ← get setter
+export default function LoginScreen() {
+  const navigation = useNavigation();
+  const { login, loading, error } = useAuth();
 
-  const onSignIn = () => {
-    // In a real app, validate credentials here…
-    setUserName(user.trim());
-    navigation.replace('Main');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const onLogin = async () => {
+    const user = await login(email, password);
+    if (user) {
+      Alert.alert('Success', `Welcome back ${user.name || ''}`);
+      navigation.navigate('Dashboard' as never);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/illustrations/blue_login.png')}
-        style={styles.image}
-        resizeMode="contain"
-      />
-      <Text style={styles.h1}>
-        Hello,{'\n'}Welcome {user.trim() ? user.trim() : 'back'}
-      </Text>
+      <Text style={styles.title}>Welcome Back</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        value={user}
-        onChangeText={setUser}
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
       />
+
       <TextInput
         style={styles.input}
         placeholder="Password"
         secureTextEntry
-        value={pass}
-        onChangeText={setPass}
+        value={password}
+        onChangeText={setPassword}
       />
-      <Pressable style={styles.link} onPress={() => {}}>
-        <Text style={styles.linkText}>Forget Password</Text>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
       </Pressable>
-      <Pressable style={styles.button} onPress={onSignIn}>
-        <Text style={styles.buttonText}>Sign in</Text>
-      </Pressable>
-      <Pressable style={{ marginTop: 20 }} onPress={() => navigation.navigate('SignUp')}>
-        <Text>
-          Don't have an account?{' '}
-          <Text style={{ color: palette.blue[600] }}>Sign up</Text>
-        </Text>
+
+      <Pressable onPress={() => navigation.navigate('SignUpScreen' as never)}>
+        <Text style={styles.switchText}>Don't have an account? Sign up</Text>
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: palette.white },
-  image: { width: '100%', height: 220, alignSelf: 'center', marginTop: 40 },
-  h1: { fontSize: 28, fontWeight: '700', marginVertical: 24 },
-  input: {
-    backgroundColor: palette.blue[100],
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 16,
+  container: {
+    flex: 1,
+    backgroundColor: palette.white,
+    padding: 24,
+    justifyContent: 'center',
   },
-  link: { alignSelf: 'flex-end', marginBottom: 32 },
-  linkText: { color: palette.blue[600] },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: palette.gray[100],
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+    fontSize: 16,
+  },
   button: {
     backgroundColor: palette.blue[500],
-    paddingVertical: 16,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: 8,
   },
-  buttonText: { color: palette.white, fontSize: 16, fontWeight: '600' },
+  buttonText: {
+    color: palette.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  switchText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: palette.blue[500],
+  },
 });

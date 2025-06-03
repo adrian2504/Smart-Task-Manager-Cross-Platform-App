@@ -12,6 +12,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import { Feather } from '@expo/vector-icons';  // using Feather arrow icon
 
 import { palette } from '../theme/colors';
 import { useTasks } from '../hooks/TasksContext';
@@ -24,11 +25,10 @@ export default function AddTaskScreen() {
   const [overview, setOverview] = useState('');
   const [due, setDue] = useState<Date | undefined>();
   const [showPicker, setShowPicker] = useState(false);
-  const [category, setCategory] = useState<string>(''); // ← new
+  const [category, setCategory] = useState<string>('');
 
   const create = () => {
     if (!title.trim()) return;
-
     dispatch({
       type: 'ADD',
       payload: {
@@ -37,18 +37,22 @@ export default function AddTaskScreen() {
         notes: overview,
         due: due?.toISOString(),
         done: false,
-        category,            // ← save it
+        category,
       },
     });
-
     navigation.goBack();
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* ← Custom “back arrow” at top-left */}
+      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Feather name="arrow-left" size={24} color={palette.blue[500]} />
+      </Pressable>
+
       <Text style={styles.h1}>Add Task</Text>
 
-      {/* Task title */}
+      {/* Task Name */}
       <Text style={styles.label}>Task Name</Text>
       <TextInput
         style={styles.input}
@@ -57,7 +61,7 @@ export default function AddTaskScreen() {
         onChangeText={setTitle}
       />
 
-      {/* Due date */}
+      {/* Date of Due */}
       <Text style={styles.label}>Date of Due</Text>
       {Platform.OS === 'web' ? (
         <input
@@ -89,7 +93,7 @@ export default function AddTaskScreen() {
         </>
       )}
 
-      {/* Category picker */}
+      {/* Category dropdown */}
       <Text style={styles.label}>Category</Text>
       <View style={styles.pickerWrapper}>
         <Picker
@@ -115,7 +119,7 @@ export default function AddTaskScreen() {
         onChangeText={setOverview}
       />
 
-      {/* Save button */}
+      {/* Save */}
       <Pressable style={styles.button} onPress={create}>
         <Text style={styles.buttonText}>Create a task</Text>
       </Pressable>
@@ -124,20 +128,27 @@ export default function AddTaskScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, backgroundColor: palette.white },
-
+  container: {
+    padding: 24,
+    backgroundColor: palette.white,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    zIndex: 10,
+  },
   h1: {
+    marginTop: 48,  // leave space for the back arrow
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 24,
   },
-
   label: {
     fontSize: 14,
     marginBottom: 6,
     color: palette.gray[500],
   },
-
   input: {
     backgroundColor: palette.blue[50],
     borderRadius: 8,
@@ -146,8 +157,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
   },
-
-  // Web “<input type='date'>” style
   webInput: {
     backgroundColor: palette.blue[50],
     borderRadius: 8,
@@ -156,8 +165,6 @@ const styles = StyleSheet.create({
     border: 'none',
     width: '100%',
   },
-
-  // Picker wrapper so it looks like a field
   pickerWrapper: {
     backgroundColor: palette.blue[50],
     borderRadius: 8,
@@ -167,7 +174,6 @@ const styles = StyleSheet.create({
     height: 48,
     width: '100%',
   },
-
   button: {
     backgroundColor: palette.blue[500],
     paddingVertical: 16,

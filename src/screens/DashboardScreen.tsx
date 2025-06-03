@@ -7,7 +7,6 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { Calendar } from 'react-native-calendars';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -16,6 +15,7 @@ import GlassContainer from '../components/GlassContainer';
 import { useTasks } from '../hooks/TasksContext';
 import TaskCard from '../components/TaskCard';
 import { useUser } from '../hooks/UserContext';
+import { isAfter, startOfDay } from 'date-fns';
 
 const { width } = Dimensions.get('window');
 
@@ -24,12 +24,22 @@ export default function DashboardScreen() {
   const { tasks, dispatch } = useTasks();
   const { userName } = useUser();
 
-  /* ===== Helper: tasks due in the future ===== */
-  const today = new Date().setHours(0, 0, 0, 0);
-  const upcoming = tasks
-    .filter((t) => t.due && new Date(t.due).getTime() > today)
-    .sort((a, b) => +new Date(a.due!) - +new Date(b.due!))     // soonest first
-    .slice(0, 10);                                              // cap to 10 cards
+  const today = startOfDay(new Date());
+
+  // Fix: Compare using only the day (no time)
+ const upcoming = tasks
+  .filter((t) => {
+    if (!t.due) return false;
+    const dueDateStr = t.due.split('T')[0]; // Get YYYY-MM-DD
+    const dueTime = new Date(`${dueDateStr}T00:00:00Z`).getTime(); // UTC-safe
+    return dueTime > today;
+  })
+  .sort((a, b) => {
+    const aDate = new Date(`${a.due!.split('T')[0]}T00:00:00Z`).getTime();
+    const bDate = new Date(`${b.due!.split('T')[0]}T00:00:00Z`).getTime();
+    return aDate - bDate;
+  })
+  .slice(0, 10);
 
   const pending = tasks.filter((t) => !t.done).length;
   const progress = tasks.length
@@ -41,14 +51,13 @@ export default function DashboardScreen() {
       {/* ===== Header ===== */}
       <View style={styles.headerBox}>
         <Text style={styles.greeting}>
-         Good morning {userName ? userName : ''}
-       </Text>
+          Good morning {userName ? userName : ''}
+        </Text>
         <Text style={styles.sub}>{pending} Tasks remaining</Text>
         <Pressable style={styles.bellIcon}>
           <Feather name="bell" size={20} color={palette.white} />
         </Pressable>
       </View>
-
 
       {/* ===== Today summary widget ===== */}
       <GlassContainer style={styles.widget}>
@@ -79,7 +88,7 @@ export default function DashboardScreen() {
             <GlassContainer key={task.id} style={styles.cardSmall}>
               <Text style={styles.cardSmallTitle}>{task.title}</Text>
               <Text style={styles.cardSmallSub}>
-                {new Date(task.due!).toDateString()}
+               {task.due?.split('T')[0]}
               </Text>
             </GlassContainer>
           ))}

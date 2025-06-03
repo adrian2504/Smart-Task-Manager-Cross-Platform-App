@@ -1,24 +1,40 @@
 // src/screens/SignUpScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Image } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-import { RootStackParamList } from '../navigation/RootNavigator';
 import { palette } from '../theme/colors';
-import { useUser } from '../hooks/UserContext';
+import { useAuth } from '../hooks/useAuth';
+import { useUser } from '../hooks/UserContext';   // <— to store username in global ctx
 
-export default function SignUpScreen({
-  navigation,
-}: NativeStackScreenProps<RootStackParamList, 'SignUp'>) {
-  const [user, setUser] = useState('');
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
+export default function SignUpScreen() {
+  const navigation = useNavigation();
+  const { signup, loading, error } = useAuth();
   const { setUserName } = useUser();
 
-  const onSignUp = () => {
-    // In a real app, validate and create account here…
-    setUserName(user.trim());
-    navigation.replace('Main');
+  const [username, setUsername] = useState('');
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+
+  const onSignUp = async () => {
+    try {
+      const data = await signup(username.trim(), email.trim(), password);
+      setUserName(data.username);            // store name globally
+      Alert.alert('Welcome!', `Hello ${data.username}`);
+      navigation.replace('Main' as never);   // <-- change if your main screen differs
+    } catch (err: any) {
+      console.error('Signup failed', err);
+      Alert.alert('Signup failed', 'Please check your details and try again.');
+    }
   };
 
   return (
@@ -28,33 +44,45 @@ export default function SignUpScreen({
         style={styles.image}
         resizeMode="contain"
       />
+
       <Text style={styles.h1}>Sign up</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Username"
-        value={user}
-        onChangeText={setUser}
+        value={username}
+        onChangeText={setUsername}
       />
       <TextInput
         style={styles.input}
         placeholder="Email"
-        value={email}
         keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
         onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}
         placeholder="Password"
         secureTextEntry
-        value={pass}
-        onChangeText={setPass}
+        value={password}
+        onChangeText={setPassword}
       />
-      <Pressable style={styles.button} onPress={onSignUp}>
-        <Text style={styles.buttonText}>Sign up</Text>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <Pressable style={styles.button} onPress={onSignUp} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign up</Text>
+        )}
       </Pressable>
+
       <Pressable style={{ marginTop: 20 }} onPress={() => navigation.goBack()}>
         <Text>
-          Already have an account? <Text style={{ color: palette.blue[600] }}>Sign in</Text>
+          Already have an account?{' '}
+          <Text style={{ color: palette.blue[600] }}>Sign in</Text>
         </Text>
       </Pressable>
     </View>
@@ -62,9 +90,14 @@ export default function SignUpScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: palette.white },
-  image: { width: '100%', height: 200, alignSelf: 'center', marginTop: 30 },
-  h1: { fontSize: 28, fontWeight: '700', marginVertical: 24 },
+  container: {
+    flex: 1,
+    padding: 24,
+    backgroundColor: palette.white,
+    justifyContent: 'center',
+  },
+  image: { width: '100%', height: 200, alignSelf: 'center', marginBottom: 20 },
+  h1: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
   input: {
     backgroundColor: palette.blue[100],
     borderRadius: 8,
@@ -78,6 +111,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: 4,
   },
   buttonText: { color: palette.white, fontSize: 16, fontWeight: '600' },
+  error: { color: 'red', textAlign: 'center', marginBottom: 8 },
 });
