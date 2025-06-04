@@ -1,20 +1,26 @@
+// src/components/GlassContainer.tsx
 import React from 'react';
-import { ViewStyle } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 
-interface Props { children: React.ReactNode; style?: ViewStyle | ViewStyle[]; }
+type Props = { children: React.ReactNode; style?: ViewStyle };
+
 export default function GlassContainer({ children, style }: Props) {
-  return (
-    <BlurView intensity={50} tint="light" style={[{ borderRadius: 20, overflow: 'hidden' }, style]}>
-      <LinearGradient
-        colors={["#ffffff33", "#ffffff11"]}
-        style={{ padding: 16 }}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        {children}
-      </LinearGradient>
-    </BlurView>
-  );
+  return <View style={[styles.glass, style]}>{children}</View>;
 }
+
+const styles = StyleSheet.create({
+  glass: {
+    backgroundColor: 'rgba(255,255,255,0.25)',   // frosted glass
+    borderRadius: 16,
+    padding: 16,
+    // iOS / Android
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    // Web
+    boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+    // Makes the blur work on Web / native (expo-blur for native is optional)
+    backdropFilter: 'blur(10px)',
+  },
+});
