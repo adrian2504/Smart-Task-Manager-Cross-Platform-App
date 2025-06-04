@@ -6,8 +6,7 @@ import {
   StyleSheet,
   FlatList,
 } from 'react-native';
-import { Calendar } from 'react-native-calendars';
-
+import { Calendar, DateObjectType } from 'react-native-calendars';
 import { palette } from '../theme/colors';
 import { useTasks } from '../hooks/TasksContext';
 import TaskCard from '../components/TaskCard';
@@ -15,35 +14,36 @@ import TaskCard from '../components/TaskCard';
 export default function CalendarScreen() {
   const { tasks, dispatch } = useTasks();
 
-  // Track selected date (YYYY-MM-DD). Default to today.
-  const todayString = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState<string>(todayString);
+  // 1) Track selected date (YYYY-MM-DD). Default: today.
+  const todayKey = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey);
 
-  // Mark all task due dates with a dot.
+  // 2) Build “markedDates”: every date with ≥1 task gets a dot
   const markedDates: Record<string, any> = {};
   tasks.forEach((task) => {
     if (!task.due) return;
-    const dateKey = task.due.split('T')[0];
-    markedDates[dateKey] = { marked: true, dotColor: palette.blue[500] };
+    const key = task.due.split('T')[0];
+    markedDates[key] = { marked: true, dotColor: palette.blue[500] };
   });
-
-  // Mark selected date specially
+  // Highlight the selected date as well
   markedDates[selectedDate] = {
-    ...(markedDates[selectedDate] || {}),
+    ...(markedDates[selectedDate] || { marked: false }),
     selected: true,
     selectedColor: palette.blue[500],
   };
 
-  // Filter tasks strictly matching selected YYYY-MM-DD
-  const filteredTasks = tasks.filter(
-    (task) => task.due?.startsWith(selectedDate)
-  );
+  // 3) Filter tasks for the selected date
+  const tasksForDay = tasks.filter((task) => {
+    return task.due?.split('T')[0] === selectedDate;
+  });
 
   return (
     <View style={styles.container}>
-      {/* Calendar Component */}
+      {/* ===== Calendar header ===== */}
       <Calendar
-        onDayPress={(day) => setSelectedDate(day.dateString)}
+        onDayPress={(day: DateObjectType) => {
+          setSelectedDate(day.dateString);
+        }}
         markedDates={markedDates}
         theme={{
           selectedDayBackgroundColor: palette.blue[500],
@@ -55,9 +55,9 @@ export default function CalendarScreen() {
         style={styles.calendar}
       />
 
-      {/* Task List for Selected Date */}
+      {/* ===== Task list for that day ===== */}
       <View style={styles.listContainer}>
-        {filteredTasks.length === 0 ? (
+        {tasksForDay.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
               No tasks for {selectedDate}
@@ -65,7 +65,7 @@ export default function CalendarScreen() {
           </View>
         ) : (
           <FlatList
-            data={filteredTasks}
+            data={tasksForDay}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TaskCard
@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
   },
   emptyText: {
     fontSize: 16,

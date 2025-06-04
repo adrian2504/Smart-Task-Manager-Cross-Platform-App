@@ -1,30 +1,37 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// src/navigation/RootNavigator.tsx
 
-import OnboardingScreen from '../screens/OnboardingScreen';
-import LoginScreen      from '../screens/LoginScreen';
-import SignUpScreen     from '../screens/SignUpScreen';
-import AddTaskScreen    from '../screens/AddTaskScreen';
-import TabsNavigator    from './TabsNavigator';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+import OnboardingScreen from "../screens/OnboardingScreen";
+import LoginScreen      from "../screens/LoginScreen";
+import SignUpScreen     from "../screens/SignUpScreen";
+import MainTabs         from "./MainTabs"; // ← now exports the stack that contains tabs + AddTask
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Login:      undefined;
   SignUp:     undefined;
-  AddTask:    undefined;
-  Main:       undefined;
+  Main:       undefined; // MainTabs (which itself contains Tabs + AddTask)
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-      <Stack.Screen name="Login"      component={LoginScreen} />
-      <Stack.Screen name="AddTask"    component={AddTaskScreen} />
-      <Stack.Screen name="Main"       component={TabsNavigator} />
-      <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
-    </Stack.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {/* 1) Onboarding (shown once at app start) */}
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+
+        {/* 2) Auth flow */}
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+
+        {/* 3) After login/sign‐up, navigate here: */}
+        <Stack.Screen name="Main" component={MainTabs} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

@@ -1,3 +1,4 @@
+// src/screens/DashboardScreen.tsx
 import React from 'react';
 import {
   View,
@@ -10,52 +11,51 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-import { palette } from '../theme/colors';
-import GlassContainer from '../components/GlassContainer';
-import { useTasks } from '../hooks/TasksContext';
-import TaskCard from '../components/TaskCard';
-import { useUser } from '../hooks/UserContext';
-import { isAfter, startOfDay } from 'date-fns';
+import { palette }     from '../theme/colors';
+import GlassContainer  from '../components/GlassContainer';
+import { useTasks }    from '../hooks/TasksContext';
+import TaskCard        from '../components/TaskCard';
+import { useAuth }     from '../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
-  const navigation = useNavigation();
+  const navigation         = useNavigation<any>();
   const { tasks, dispatch } = useTasks();
-  const { userName } = useUser();
+  const { user, logout }    = useAuth();       
 
-  const today = startOfDay(new Date());
+  /* ---------- derive task stats ---------- */
+  const today    = new Date().setHours(0, 0, 0, 0);
+  const upcoming = tasks
+    .filter(t => t.due && new Date(t.due).getTime() > today)
+    .sort((a, b) => +new Date(a.due!) - +new Date(b.due!))
+    .slice(0, 10);
 
-  // Fix: Compare using only the day (no time)
- const upcoming = tasks
-  .filter((t) => {
-    if (!t.due) return false;
-    const dueDateStr = t.due.split('T')[0]; // Get YYYY-MM-DD
-    const dueTime = new Date(`${dueDateStr}T00:00:00Z`).getTime(); // UTC-safe
-    return dueTime > today;
-  })
-  .sort((a, b) => {
-    const aDate = new Date(`${a.due!.split('T')[0]}T00:00:00Z`).getTime();
-    const bDate = new Date(`${b.due!.split('T')[0]}T00:00:00Z`).getTime();
-    return aDate - bDate;
-  })
-  .slice(0, 10);
-
-  const pending = tasks.filter((t) => !t.done).length;
+  const pending  = tasks.filter(t => !t.done).length;
   const progress = tasks.length
-    ? Math.round((tasks.filter((t) => t.done).length / tasks.length) * 100)
+    ? Math.round((tasks.filter(t => t.done).length / tasks.length) * 100)
     : 0;
 
+  /* ---------- handlers ---------- */
+  const handleLogout = () => {
+    logout();                 // clears user in AuthContext
+    navigation.replace('Login');
+  };
+
+  /* ---------- UI ---------- */
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* ===== Header ===== */}
       <View style={styles.headerBox}>
-        <Text style={styles.greeting}>
-          Good morning {userName ? userName : ''}
-        </Text>
-        <Text style={styles.sub}>{pending} Tasks remaining</Text>
-        <Pressable style={styles.bellIcon}>
-          <Feather name="bell" size={20} color={palette.white} />
+        <View>
+          <Text style={styles.greeting}>
+            {user ? `Welcome, ${user}!` : 'Welcome!'}
+          </Text>
+          <Text style={styles.sub}>{pending} Tasks remaining</Text>
+        </View>
+
+        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+          <Feather name="log-out" size={20} color={palette.white} />
         </Pressable>
       </View>
 
@@ -66,13 +66,13 @@ export default function DashboardScreen() {
 
         <Pressable
           style={styles.widgetFab}
-          onPress={() => navigation.navigate('AddTask' as never)}
+          onPress={() => navigation.navigate('AddTask')}
         >
           <Feather name="plus" size={20} color={palette.white} />
         </Pressable>
       </GlassContainer>
 
-      {/* ===== Upcoming tasks horizontal scroll ===== */}
+      {/* ===== Upcoming tasks ===== */}
       <Text style={styles.sectionTitle}>Upcoming Task</Text>
       {upcoming.length === 0 ? (
         <Text style={{ marginLeft: 16, color: palette.gray[500] }}>
@@ -84,21 +84,21 @@ export default function DashboardScreen() {
           showsHorizontalScrollIndicator={false}
           style={{ paddingLeft: 16 }}
         >
-          {upcoming.map((task) => (
+          {upcoming.map(task => (
             <GlassContainer key={task.id} style={styles.cardSmall}>
               <Text style={styles.cardSmallTitle}>{task.title}</Text>
               <Text style={styles.cardSmallSub}>
-               {task.due?.split('T')[0]}
+                {new Date(task.due!).toDateString()}
               </Text>
             </GlassContainer>
           ))}
         </ScrollView>
       )}
 
-      {/* ===== My Task List (live, toggleable) ===== */}
+      {/* ===== Full task list ===== */}
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>My Task List</Text>
 
-      {tasks.map((task) => (
+      {tasks.map(task => (
         <TaskCard
           key={task.id}
           task={task}
@@ -112,10 +112,10 @@ export default function DashboardScreen() {
   );
 }
 
+/* ---------- styles ---------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: palette.white },
 
-  /* header */
   headerBox: {
     backgroundColor: palette.blue[500],
     paddingTop: 50,
@@ -123,15 +123,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   greeting: { color: palette.white, fontSize: 22, fontWeight: '700' },
-  sub: { color: palette.white, fontSize: 14, marginTop: 2 },
-  bellIcon: { position: 'absolute', right: 16, top: 52 },
+  sub:      { color: palette.white, fontSize: 14, marginTop: 2 },
 
-  /* widget */
-  widget: { margin: 16, position: 'relative' },
+  logoutBtn: {
+    backgroundColor: palette.blue[400],
+    borderRadius: 18,
+    padding: 8,
+    marginLeft: 12,
+  },
+
+  widget:      { margin: 16, position: 'relative' },
   widgetTitle: { fontWeight: '600', marginBottom: 4 },
-  widgetSub: { color: palette.gray[500] },
+  widgetSub:   { color: palette.gray[500] },
   widgetFab: {
     position: 'absolute',
     right: 12,
@@ -144,7 +152,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* section titles + cards */
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -155,7 +162,8 @@ const styles = StyleSheet.create({
     width: width * 0.45,
     borderRadius: 12,
     marginRight: 12,
+    padding: 12,
   },
   cardSmallTitle: { fontWeight: '600', marginBottom: 4 },
-  cardSmallSub: { color: palette.gray[500], fontSize: 12 },
+  cardSmallSub:   { color: palette.gray[500], fontSize: 12 },
 });

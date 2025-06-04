@@ -18,7 +18,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "package": "com.taskmanager",
+      "permissions": [],
+      "intentFilters": [],
+      "usesCleartextTraffic": true,
+      "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true

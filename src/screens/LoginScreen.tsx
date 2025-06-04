@@ -1,3 +1,4 @@
+// src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -5,62 +6,66 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
 import { useAuth } from '../hooks/useAuth';
 import { palette } from '../theme/colors';
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { login, loading, error } = useAuth();
-
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [pass, setPass] = useState('');
 
   const onLogin = async () => {
-    const user = await login(email, password);
-    if (user) {
-      Alert.alert('Success', `Welcome back ${user.name || ''}`);
-      navigation.navigate('Dashboard' as never);
+    if (!email.trim() || !pass) return;
+    const ok = await login(email.trim(), pass);
+    if (ok) {
+      // as soon as login(...) setAuthUser inside context, navigate to Main
+      navigation.replace('Main');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
+      <Text style={styles.h1}>Sign in</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Email"
-        autoCapitalize="none"
         keyboardType="email-address"
+        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Password"
         secureTextEntry
-        value={password}
-        onChangeText={setPassword}
+        value={pass}
+        onChangeText={setPass}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
+      <Pressable
+        style={[styles.button, loading && { opacity: 0.5 }]}
+        onPress={onLogin}
+        disabled={loading}
+      >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Login</Text>
+          <Text style={styles.buttonText}>Sign in</Text>
         )}
       </Pressable>
 
-      <Pressable onPress={() => navigation.navigate('SignUpScreen' as never)}>
-        <Text style={styles.switchText}>Don't have an account? Sign up</Text>
+      <Pressable style={{ marginTop: 20 }} onPress={() => navigation.navigate('SignUp')}>
+        <Text>
+          Don’t have an account?{' '}
+          <Text style={{ color: palette.blue[600] }}>Sign up</Text>
+        </Text>
       </Pressable>
     </View>
   );
@@ -69,43 +74,31 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.white,
     padding: 24,
+    backgroundColor: palette.white,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 22,
+  h1: {
+    fontSize: 28,
     fontWeight: '700',
-    marginBottom: 24,
     textAlign: 'center',
+    marginBottom: 24,
   },
   input: {
-    backgroundColor: palette.gray[100],
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 16,
+    backgroundColor: palette.blue[100],
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
+    marginBottom: 16,
   },
   button: {
     backgroundColor: palette.blue[500],
-    padding: 16,
+    paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
-  buttonText: {
-    color: palette.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  error: {
-    color: 'red',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  switchText: {
-    marginTop: 20,
-    textAlign: 'center',
-    color: palette.blue[500],
-  },
+  buttonText: { color: palette.white, fontSize: 16, fontWeight: '600' },
+  error: { color: 'red', textAlign: 'center', marginBottom: 8 },
 });
