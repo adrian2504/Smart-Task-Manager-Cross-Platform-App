@@ -1,26 +1,14 @@
-// backend/models/User.js
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-  },
+  username:   { type: String, required: true, trim: true },
+  email:      { type: String, required: true, unique: true, lowercase: true },
+  password:   { type: String, required: true },      // bcrypt hash
+  avatarUrl:  String,
+  bio:        String,
 
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-
-  // We store the bcrypt hash in `password`
-  password: {
-    type: String,
-    required: true,
-  },
+  /* Multi-tenant: every user belongs to exactly one workspace  */
+  workspaceId:{ type: mongoose.Schema.Types.ObjectId, ref: 'Workspace' },
 });
 
-// If you had earlier stored the hash in `passwordHash` instead,
-// rename that field or add an alias, but this sample matches your database.
-export default mongoose.model("User", userSchema);
+export default mongoose.model('User', userSchema);

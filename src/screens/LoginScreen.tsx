@@ -1,28 +1,24 @@
-// src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../hooks/useAuth';
+
 import { palette } from '../theme/colors';
+import { useAuth }   from '../hooks/useAuth';
+import { useUser }   from '../hooks/UserContext';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
   const { login, loading, error } = useAuth();
+  const { setUserName } = useUser();
+
   const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
+  const [pass,  setPass ] = useState('');
 
   const onLogin = async () => {
     if (!email.trim() || !pass) return;
-    const ok = await login(email.trim(), pass);
-    if (ok) {
-      // as soon as login(...) setAuthUser inside context, navigate to Main
+    const name = await login(email.trim(), pass);
+    if (name) {
+      setUserName(name);
       navigation.replace('Main');
     }
   };
@@ -54,36 +50,19 @@ export default function LoginScreen() {
         onPress={onLogin}
         disabled={loading}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Sign in</Text>
-        )}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign in</Text>}
       </Pressable>
 
       <Pressable style={{ marginTop: 20 }} onPress={() => navigation.navigate('SignUp')}>
-        <Text>
-          Don’t have an account?{' '}
-          <Text style={{ color: palette.blue[600] }}>Sign up</Text>
-        </Text>
+        <Text>Don’t have an account? <Text style={{ color: palette.blue[600] }}>Sign up</Text></Text>
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: palette.white,
-    justifyContent: 'center',
-  },
-  h1: {
-    fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
+  container: { flex: 1, padding: 24, backgroundColor: palette.white, justifyContent: 'center' },
+  h1: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
   input: {
     backgroundColor: palette.blue[100],
     borderRadius: 8,

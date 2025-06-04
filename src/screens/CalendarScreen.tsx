@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  Image, // in case you want to show an icon—no tintColor usage
 } from 'react-native';
 import { Calendar, DateObjectType } from 'react-native-calendars';
 import { palette } from '../theme/colors';
@@ -59,9 +60,7 @@ export default function CalendarScreen() {
       <View style={styles.listContainer}>
         {tasksForDay.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No tasks for {selectedDate}
-            </Text>
+            <Text style={styles.emptyText}>No tasks for {selectedDate}</Text>
           </View>
         ) : (
           <FlatList

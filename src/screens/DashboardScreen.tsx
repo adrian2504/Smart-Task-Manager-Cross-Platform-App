@@ -26,16 +26,14 @@ export default function DashboardScreen() {
   const { userName, setUserName } = useUser();
   const { logout } = useAuth();
 
-  // 1) Today’s date (midnight)
+  // 1) Today (midnight)
   const todayMidnight = new Date().setHours(0, 0, 0, 0);
 
-  // 2) Filter “upcoming” = tasks whose due-date > today
+  // 2) “Upcoming” tasks: due-date > today
   const upcoming = tasks
-    .filter((t) => t.due && new Date(t.due + 'T00:00:00').getTime() > todayMidnight)
-    .sort((a, b) =>
-      Number(new Date(a.due + 'T00:00:00')) - Number(new Date(b.due + 'T00:00:00'))
-    )
-    .slice(0, 5); // show only next 5 for space reasons
+    .filter((t) => t.due && new Date(t.due).getTime() > todayMidnight)
+    .sort((a, b) => new Date(a.due!).getTime() - new Date(b.due!).getTime())
+    .slice(0, 5);
 
   const pendingCount = tasks.filter((t) => !t.done).length;
   const progress = tasks.length
@@ -52,7 +50,7 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* ===== Header (Blue Banner) ===== */}
+      {/* ===== Header ===== */}
       <View style={styles.headerBox}>
         <View style={{ flexShrink: 1 }}>
           <Text style={styles.greeting}>
@@ -65,7 +63,7 @@ export default function DashboardScreen() {
         </Pressable>
       </View>
 
-      {/* ===== “Today Task Summary” (Glass Card) ===== */}
+      {/* ===== Today summary widget ===== */}
       <View style={{ marginHorizontal: 16, marginTop: 16 }}>
         <GlassContainer style={styles.widget}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -83,7 +81,7 @@ export default function DashboardScreen() {
         </GlassContainer>
       </View>
 
-      {/* ===== “Upcoming Task” Section ===== */}
+      {/* ===== Upcoming Tasks ===== */}
       <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
       <ScrollView
         horizontal
@@ -96,10 +94,12 @@ export default function DashboardScreen() {
           </View>
         ) : (
           upcoming.map((task: Task) => {
-            // Build card’s display date
-            const dateText = task.due
-              ? new Date(task.due + 'T00:00:00').toDateString()
-              : '';
+            // Build “display date” from ISO string
+            let dateText = '';
+            if (task.due) {
+              const d = new Date(task.due);
+              dateText = d.toDateString();
+            }
             return (
               <View key={task.id} style={styles.upcomingCard}>
                 <View style={styles.upcomingContent}>
@@ -128,7 +128,7 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
-      {/* ===== “My Task List” – each row with a TaskCard ===== */}
+      {/* ===== My Task List ===== */}
       <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
         My Task List
       </Text>
@@ -183,8 +183,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: 16,
     padding: 20,
-    // extra glassy blur/shadow can be added if you use `BlurView` in RN,
-    // but for web/native we rely on a slightly transparent white + shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -218,7 +216,6 @@ const styles = StyleSheet.create({
     color: palette.gray[900],
   },
 
-  // Upcoming horizontal cards
   emptyUpcoming: {
     backgroundColor: palette.gray[100],
     borderRadius: 12,
@@ -231,6 +228,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: palette.gray[500],
   },
+
   upcomingCard: {
     backgroundColor: palette.white,
     borderRadius: 16,

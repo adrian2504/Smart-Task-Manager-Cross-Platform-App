@@ -1,65 +1,61 @@
-// src/hooks/TasksContext.tsx
+import React, { createContext, useContext, useReducer } from 'react';
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { Task } from '../types';
+export type Task = {
+  id: string;
+  title: string;
+  due?: string;                 // YYYY-MM-DD
+  notes?: string;
+  category?: string;
+  comment?: string;
+  imageUri?: string;
+  status?: 'not_started' | 'in_progress' | 'done';
+  done: boolean;
+};
 
-// 1) Define state & action types:
-interface State {
-  tasks: Task[];
-}
+type State = { tasks: Task[] };
 
 type Action =
-  | { type: 'ADD';    payload: Task }
+  | { type: 'ADD'; payload: Task }
   | { type: 'TOGGLE'; id: string }
   | { type: 'DELETE'; id: string }
-  | { type: 'REORDER'; payload: Task[] };
+  | { type: 'STATUS'; id: string; status: Task['status'] };
 
-// 2) Reducer logic (same as before):
-function tasksReducer(state: State, action: Action): State {
+const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD':
-      return { tasks: [...state.tasks, action.payload] };
-
+      return { tasks: [action.payload, ...state.tasks] };
     case 'TOGGLE':
       return {
-        tasks: state.tasks.map(t =>
+        tasks: state.tasks.map((t) =>
           t.id === action.id ? { ...t, done: !t.done } : t
         ),
       };
-
     case 'DELETE':
-      return { tasks: state.tasks.filter(t => t.id !== action.id) };
-
-    case 'REORDER':
-      return { tasks: action.payload };
-
+      return { tasks: state.tasks.filter((t) => t.id !== action.id) };
+    case 'STATUS':
+      return {
+        tasks: state.tasks.map((t) =>
+          t.id === action.id ? { ...t, status: action.status } : t
+        ),
+      };
     default:
       return state;
   }
-}
-
-// 3) Context value shape:
-type TasksContextType = {
-  tasks: Task[];
-  dispatch: React.Dispatch<Action>;
 };
 
-// 4) Create the context:
-const TasksContext = createContext<TasksContextType>({
-  tasks: [],
-  dispatch: () => {},
-});
-
-// 5) Convenience hook to read the context:
-export const useTasks = () => useContext(TasksContext);
-
-// 6) Provider component
-export function TasksProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(tasksReducer, { tasks: [] });
-
-  return (
-    <TasksContext.Provider value={{ tasks: state.tasks, dispatch }}>
-      {children}
-    </TasksContext.Provider>
-  );
+const TasksContext = createContext<ReturnType<typeof useInternal> | null>(null);
+function useInternal() {
+  return useReducer(reducer, { tasks: [] });
 }
+
+export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const value = useInternal();
+  return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
+};
+
+export const useTasks = () => {
+  const ctx = useContext(TasksContext);
+  if (!ctx) throw new Error('useTasks must be used inside <TasksProvider>');
+  const [state, dispatch] = ctx;
+  return { tasks: state.tasks, dispatch };
+};
