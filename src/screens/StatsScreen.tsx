@@ -11,7 +11,6 @@ const {
   VictoryChart,
   VictoryBar,
   VictoryAxis,
-  VictoryLegend,
 } = Platform.OS === 'web'
   ? require('victory')
   : require('victory-native');
@@ -21,139 +20,135 @@ const { width } = Dimensions.get('window');
 export default function StatsScreen() {
   const { tasks } = useTasks();
 
-  // Compute basic counts
+  // ---- 1) Compute summary counts ----
   const totalTasks = tasks.length;
-  const doneTasks = tasks.filter((t) => t.done).length;
+  const doneTasks = tasks.filter((t) => t.status === 'Done').length;
+  const inProgressTasks = tasks.filter((t) => t.status === 'In Progress').length;
+  const notStartedTasks = tasks.filter((t) => t.status === 'Not Started').length;
   const pendingTasks = totalTasks - doneTasks;
 
-  // Compute category breakdown
-  const categoryCounts: Record<string, number> = {};
-  tasks.forEach((t) => {
-    const cat = t.category?.trim() || 'Uncategorized';
-    if (!categoryCounts[cat]) categoryCounts[cat] = 0;
-    categoryCounts[cat]++;
-  });
-
+  // ---- 2) Build pie data (Done vs Pending) ----
   const pieData = [
     { x: 'Done', y: doneTasks },
     { x: 'Pending', y: pendingTasks },
   ];
 
-  const barData = Object.entries(categoryCounts).map(([category, count]) => ({
-    category,
-    count,
-  }));
+  // ---- 3) Build histogram data (status breakdown) ----
+  const statusCounts = [
+    { status: 'Not Started', count: notStartedTasks },
+    { status: 'In Progress', count: inProgressTasks },
+    { status: 'Done', count: doneTasks },
+  ];
 
-  // Determine an insight message
+  // ---- 4) Determine insight text ----
   let insightText = '';
   if (totalTasks === 0) {
     insightText = 'You have no tasks yet. Add one to get started!';
-  } else if (pendingTasks === 0) {
-    insightText = "Great job—you're all caught up!";
+  } else if (doneTasks === totalTasks) {
+    insightText = "Fantastic! All tasks are complete.";
   } else if (doneTasks === 0) {
-    insightText = "Looks like you're just getting started. Let's complete your first task!";
+    insightText = "No tasks completed yet. Let’s get moving!";
   } else {
     const percentDone = Math.round((doneTasks / totalTasks) * 100);
-    insightText = `You've completed ${percentDone}% of your tasks so far. Keep it up!`;
+    insightText = `You’ve completed ${percentDone}% of your tasks. Keep going!`;
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* ===== Summary Text ===== */}
-      <View style={styles.summaryBox}>
-        <Text style={styles.summaryTitle}>Task Overview</Text>
-        <Text style={styles.summaryText}>Total: {totalTasks}</Text>
-        <Text style={styles.summaryText}>Done: {doneTasks}</Text>
-        <Text style={styles.summaryText}>Pending: {pendingTasks}</Text>
-        <Text style={styles.insight}>{insightText}</Text>
+      {/* ===== Glassy Blue Boxes for Summary Counts ===== */}
+      <View style={styles.summaryRow}>
+        <View style={[styles.glassBox, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
+          <Text style={styles.boxNumber}>{totalTasks}</Text>
+          <Text style={styles.boxLabel}>Total</Text>
+        </View>
+        <View style={[styles.glassBox, { backgroundColor: 'rgba(14, 165, 233, 0.15)' }]}>
+          <Text style={styles.boxNumber}>{inProgressTasks}</Text>
+          <Text style={styles.boxLabel}>In Progress</Text>
+        </View>
+        <View style={[styles.glassBox, { backgroundColor: 'rgba(38, 157, 248, 0.15)' }]}>
+          <Text style={styles.boxNumber}>{doneTasks}</Text>
+          <Text style={styles.boxLabel}>Done</Text>
+        </View>
+        <View style={[styles.glassBox, { backgroundColor: 'rgba(132, 204, 250, 0.15)' }]}>
+          <Text style={styles.boxNumber}>{notStartedTasks}</Text>
+          <Text style={styles.boxLabel}>Not Started</Text>
+        </View>
       </View>
 
-      {/* ===== Pie Chart: Done vs Pending ===== */}
+      {/* ===== Insight Text Under Boxes ===== */}
+      <View style={styles.insightContainer}>
+        <Text style={styles.insightText}>{insightText}</Text>
+      </View>
+
+      {/* ===== Pie Chart & Histogram Side by Side =====
       {totalTasks > 0 && (
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Completion Breakdown</Text>
-          <VictoryPie
-            data={pieData}
-            innerRadius={50}
-            width={width * 0.9}
-            height={width * 0.9}
-            labels={({ datum }) => `${datum.x}\n${datum.y}`}
-            colorScale={[palette.blue[500], palette.blue[200]]}
-            style={{
-              labels: { fill: palette.gray[700], fontSize: 14, fontWeight: '600' },
-            }}
-          />
-        </View>
-      )}
+        <View style={styles.chartsRow}>
+          ===== Pie (small, left) =====
+          <View style={styles.pieWrapper}>
+            <Text style={styles.chartTitle}>Done vs Pending</Text>
+            <VictoryPie
+              data={pieData}
+              innerRadius={40}
+              width={width * 0.4}
+              height={width * 0.4}
+              labels={({ datum }) => `${datum.x}\n${datum.y}`}
+              colorScale={[palette.blue[500], palette.blue[200]]}
+              style={{
+                labels: { fill: palette.gray[700], fontSize: 10, fontWeight: '600' },
+              }}
+            />
+          </View> 
 
-      {/* ===== Bar Chart: Tasks by Category ===== */}
-      {barData.length > 0 && (
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Tasks by Category</Text>
-          <VictoryChart
-            domainPadding={{ x: 30, y: 20 }}
-            width={width * 0.95}
-            height={300}
-          >
-            <VictoryAxis
-              style={{
-                axis: { stroke: palette.gray[400] },
-                tickLabels: { angle: -45, fontSize: 12, fill: palette.gray[600] },
-                grid: { stroke: 'transparent' },
-              }}
-            />
-            <VictoryAxis
-              dependentAxis
-              style={{
-                axis: { stroke: palette.gray[400] },
-                tickLabels: { fontSize: 12, fill: palette.gray[600] },
-                grid: { stroke: palette.gray[200], strokeDasharray: '4,8' },
-              }}
-            />
-            <VictoryBar
-              data={barData}
-              x="category"
-              y="count"
-              style={{
-                data: {
-                  fill: ({ datum }) => {
-                    // Give distinct colors per category
-                    const colors = [palette.blue[500], palette.blue[300], palette.blue[100], palette.gray[300]];
-                    // cycle through colors if more categories
-                    const idx = Object.keys(categoryCounts).indexOf(datum.category) % colors.length;
-                    return colors[idx];
+          ===== Histogram (right) =====
+          <View style={styles.histogramWrapper}>
+            <Text style={styles.chartTitle}>Status Breakdown</Text>
+            <VictoryChart
+              domainPadding={{ x: 30, y: 20 }}
+              width={width * 0.55}
+              height={250}
+            >
+              <VictoryAxis
+                style={{
+                  axis: { stroke: palette.gray[400] },
+                  tickLabels: { fontSize: 10, fill: palette.gray[600], angle: -30 },
+                  grid: { stroke: 'transparent' },
+                }}
+              />
+              <VictoryAxis
+                dependentAxis
+                style={{
+                  axis: { stroke: palette.gray[400] },
+                  tickLabels: { fontSize: 10, fill: palette.gray[600] },
+                  grid: { stroke: palette.gray[200], strokeDasharray: '4,8' },
+                }}
+              />
+              <VictoryBar
+                data={statusCounts}
+                x="status"
+                y="count"
+                barRatio={0.7}
+                style={{
+                  data: {
+                    fill: ({ datum }) => {
+                      switch (datum.status) {
+                        case 'In Progress':
+                          return palette.blue[500];
+                        case 'Done':
+                          return palette.blue[700];
+                        case 'Not Started':
+                        default:
+                          return palette.blue[300];
+                      }
+                    },
                   },
-                },
-              }}
-              barRatio={0.7}
-              labels={({ datum }) => datum.count}
-              labelComponent={
-                <Text style={{ fontSize: 10, fill: palette.gray[800] }} />
-              }
-            />
-          </VictoryChart>
-        </View>
-      )}
-
-      {/* ===== Legend for Bar Chart ===== */}
-      {barData.length > 0 && (
-        <View style={styles.legendContainer}>
-          <VictoryLegend
-            orientation="horizontal"
-            gutter={20}
-            data={Object.keys(categoryCounts).map((cat, i) => {
-              const colors = [palette.blue[500], palette.blue[300], palette.blue[100], palette.gray[300]];
-              return {
-                name: cat,
-                symbol: { fill: colors[i % colors.length], type: 'square' },
-              };
-            })}
-            style={{
-              labels: { fontSize: 12, fill: palette.gray[700] },
-            }}
-          />
-        </View>
-      )}
+                  labels: { fill: palette.gray[800], fontSize: 10, fontWeight: '500' },
+                }}
+                labels={({ datum }) => datum.count}
+              />
+            </VictoryChart>
+          </View> 
+           </View>*/}
+        
     </ScrollView>
   );
 }
@@ -163,46 +158,63 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     backgroundColor: palette.white,
   },
-  summaryBox: {
-    backgroundColor: palette.blue[50],
-    margin: 16,
+  summaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  glassBox: {
+    width: (width - 64) / 2, // two boxes per row on small screens
+    minWidth: 140,
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
-  summaryTitle: {
-    fontSize: 20,
+  boxNumber: {
+    fontSize: 24,
     fontWeight: '700',
-    color: palette.gray[800],
-    marginBottom: 8,
+    color: palette.blue[700],
   },
-  summaryText: {
-    fontSize: 16,
+  boxLabel: {
+    fontSize: 12,
     color: palette.gray[700],
     marginTop: 4,
   },
-  insight: {
-    marginTop: 12,
+  insightContainer: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  insightText: {
     fontSize: 14,
     color: palette.gray[600],
     fontStyle: 'italic',
   },
-  chartContainer: {
+  chartsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  pieWrapper: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 24,
+  },
+  histogramWrapper: {
+    flex: 1.2,
+    justifyContent: 'flex-start',
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: palette.gray[800],
-    marginBottom: 12,
-  },
-  legendContainer: {
-    marginTop: 8,
-    alignItems: 'center',
+    textAlign: 'center',
+    marginBottom: 8,
   },
 });
